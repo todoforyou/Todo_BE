@@ -1,4 +1,4 @@
-package org.cra.handong.todo;
+package org.cra.handong.todolist;
 
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
