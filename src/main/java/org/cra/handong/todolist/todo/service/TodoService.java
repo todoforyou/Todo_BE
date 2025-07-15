@@ -23,27 +23,20 @@ public class TodoService {
     private final TodoRepo todoRepository;
     private final UserService userService;
 
-
-    public TodoResponseDto createTodo(String uuid, TodoCreateRequestDto requestDto) {
-        User user = userService.findByUuid(uuid);
-
-        Todo todo = Todo.builder()
-                .content(requestDto.getContent())
-                .completed(requestDto.getCompleted())
-                .deleted(requestDto.getDeleted())
-                .user(user)
-                .build();
-
-        todoRepository.save(todo);
-
-        return toResponseDto(todo);
+    @Transactional
+    public TodoResponseDto createTodo(final Long userId, final TodoCreateRequestDto requestDto) {
+        final User user = userRepository.findByUserId(userId).orElseThrow();
+        final Todo todo = Todo.of(requestDto, user);
+        final Todo newTodo = todoRepository.save(todo);
+        return TodoResponseDto.from(newTodo);
     }
 
-    public List<TodoResponseDto> getTodos(String uuid) {
-        User user = userService.findByUuid(uuid);
+    @Transactional(readOnly = true)
+    public List<TodoResponseDto> getTodos(Long userid) {
+        User user = userRepository.findByUserId(userid).orElseThrow();
 
         return todoRepository.findAllByUser(user).stream()
-                .map(this::toResponseDto)
+                .map(TodoResponseDto::from)
                 .collect(Collectors.toList());
     }
 
@@ -66,8 +59,8 @@ public class TodoService {
 //        return toResponseDto(todo);
 //    }
 
-    public void deleteTodo(String uuid, Long todoId) {
-        User user = userService.findByUuid(uuid);
+    public void deleteTodo(Long userId, Long todoId) {
+        User user = userRepository.findByUserId(userId).orElseThrow();
 
         Todo todo = todoRepository.findById(todoId)
                 .orElseThrow(() -> new IllegalArgumentException("해당 할 일이 없습니다."));
@@ -79,13 +72,4 @@ public class TodoService {
         todoRepository.delete(todo);
     }
 
-    private TodoResponseDto toResponseDto(Todo todo) {
-        return TodoResponseDto.builder()
-                .id(todo.getId())
-                .content(todo.getContent())
-                .completed(todo.getCompleted())
-                .deleted(todo.getDeleted())
-                .userId(todo.getUser().getId())
-                .build();
-    }
 }
